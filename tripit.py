@@ -121,9 +121,9 @@ class OAuthConsumerCredential:
         return json.dumps(params)
     
     def _generate_authorization_header(self, request, args):
-        realm = request.get_type() + '://' + request.get_host()
+        realm = request.type + '://' + request.get_host()
         http_method = request.get_method().upper()
-        http_url = request.get_type() + '://' + request.get_host() + request.get_selector().split('?', 1)[0]
+        http_url = request.type + '://' + request.get_host() + request.get_selector().split('?', 1)[0]
         return ('OAuth realm="%s",' % (realm)) + \
             ','.join(
                 ['%s="%s"' % (_escape(k), _escape(v))
