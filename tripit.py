@@ -21,7 +21,6 @@
 import base64
 import datetime
 import hmac
-from hashlib import md5
 import random
 import re
 import time
@@ -30,6 +29,8 @@ import urllib.request, urllib.error, urllib.parse
 import traceback
 import xml.sax
 import json
+
+from hashlib import md5
 
 try:
     from io import StringIO
@@ -121,9 +122,9 @@ class OAuthConsumerCredential:
         return json.dumps(params)
     
     def _generate_authorization_header(self, request, args):
-        realm = request.type + '://' + request.get_host()
+        realm = request.type + '://' + request.host
         http_method = request.get_method().upper()
-        http_url = request.type + '://' + request.get_host() + request.get_selector().split('?', 1)[0]
+        http_url = request.type + '://' + request.host + request.selector.split('?', 1)[0]
         return ('OAuth realm="%s",' % (realm)) + \
             ','.join(
                 ['%s="%s"' % (_escape(k), _escape(v))
@@ -139,7 +140,7 @@ class OAuthConsumerCredential:
             'oauth_signature_method' :
                 OAuthConsumerCredential.OAUTH_SIGNATURE_METHOD,
             'oauth_version'          : OAuthConsumerCredential.OAUTH_VERSION
-            }
+        }
         if self._oauth_oauth_token != '':
             oauth_parameters['oauth_token'] = \
                 self._oauth_oauth_token
@@ -167,9 +168,9 @@ class OAuthConsumerCredential:
                  (_escape(str(k)), _escape(str(params[k]))) \
                  for k in sorted(params)]))
 
-        signature_base_string = '&'.join([method, base_url, parameters])
+        signature_base_string = '&'.join([method, base_url, parameters]).encode('ascii')
         
-        key = self._oauth_consumer_secret + '&' + self._oauth_token_secret
+        key = bytes(self._oauth_consumer_secret + '&' + self._oauth_token_secret, 'ascii')
         
         try:
             import hashlib
@@ -178,7 +179,7 @@ class OAuthConsumerCredential:
             import sha
             hashed = hmac.new(key, signature_base_string, sha)
     
-        return base64.b64encode(hashed.digest())
+        return base64.b64encode(hashed.digest()).decode()
 
 # } class:OAuthConsumerCredential
 
@@ -187,7 +188,7 @@ def _escape(s):
 
 def _generate_nonce():
     random_number = ''.join(str(random.randint(0, 9)) for _ in range(40))
-    m = md5(str(time.time()) + str(random_number))
+    m = md5((str(time.time()) + str(random_number)).encode('ascii'))
     return m.hexdigest()
 
 class ResponseHandler(xml.sax.handler.ContentHandler):
@@ -370,7 +371,7 @@ class TripIt(object):
             self.http_code = http_error.code
             stream = http_error
 
-        data = stream.read()
+        data = stream.read().decode()
         stream.close()
         self.response = data
         return data
