@@ -19,4 +19,4 @@ Example
 
     # Lists the authenticated user's upcoming trips
     t.list_trip()
-    print t.response
+    print(t.response)
